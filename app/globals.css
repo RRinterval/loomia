@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* 品牌色取自 public/logo.png：薄荷底、深藍字，三股編織線＝個案（青綠）、照顧者（珊瑚）、治療師（寶藍） */
+@theme {
+  --color-canvas: #f0f8ef;
+  --color-surface: #ffffff;
+  --color-ink: #22374f;
+  --color-muted: #6f7f8f;
+  --color-line: #dfe9df;
+  --color-brand: #16917f;
+  --color-brand-dark: #0f7465;
+  --color-brand-soft: #dcf0ea;
+  --color-alert: #f07f5b;
+  --color-alert-soft: #fdebe4;
+  --color-indigo: #3550c0;
+  --color-indigo-soft: #e3e8fa;
+  --color-dot: #c6d3cb;
+
+  --font-sans: var(--font-nunito), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+
+  --animate-sheet-up: sheet-up 0.22s ease-out;
+  --animate-pop: pop 0.18s ease-out;
+  --animate-fade-in: fade-in 0.18s ease-out;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* 橫向滑動日曆不顯示捲軸 */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 已讀未回覆：半顆變色的小點 */
+.dot-half {
+  background: linear-gradient(90deg, var(--color-alert) 50%, var(--color-dot) 50%);
+}
+
+/* 動畫透過 @theme 的 --animate-* 產生 utility，才能搭配 md: 等斷點使用 */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
