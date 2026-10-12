@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
+import { homePathFor } from "@/lib/home";
 import { User } from "@/lib/models";
 import { createSession, deleteSession } from "@/lib/session";
 
@@ -20,7 +21,8 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   }
 
   await createSession(String(user._id));
-  redirect("/");
+  // 直接導到該身分的落點，不經過 "/" 再轉一次
+  redirect(homePathFor({ role: user.role, caseIds: (user.cases ?? []).map(String) }));
 }
 
 export async function logout() {

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
+import { homePathFor } from "@/lib/home";
 import { User } from "@/lib/models";
 
 export default async function Home() {
@@ -9,7 +10,5 @@ export default async function Home() {
     await dbConnect();
     redirect((await User.exists({})) ? "/login" : "/setup");
   }
-  if (user.role === "admin") redirect("/admin");
-  if (user.caseIds.length === 1) redirect(`/cases/${user.caseIds[0]}`);
-  redirect("/cases");
+  redirect(homePathFor(user));
 }
