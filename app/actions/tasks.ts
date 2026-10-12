@@ -43,7 +43,9 @@ export async function completeTask(taskId: string) {
 export async function deleteTask(taskId: string) {
   return runAction(async () => {
     const task = await loadTask(taskId);
-    await authorize({ caseId: String(task.case), allow: can.manageTasks });
+    const user = await authorize({ caseId: String(task.case), allow: can.manageTasks });
+    // 治療師只能刪除自己指派的任務；管理員不受限
+    if (user.role === "therapist" && String(task.therapist) !== user.id) throw new UserError("只能刪除自己指派的任務");
     await Task.deleteOne({ _id: taskId });
     refresh();
   });

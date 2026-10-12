@@ -41,17 +41,23 @@ export async function loadCaseData(viewer: Viewer, caseId: string) {
   if (!kase) return null;
 
   const staffView = isStaff(viewer.role);
+  // 治療師之間互相隔離：只看得到自己的回覆、任務與 AI 摘要（管理員與個案端看得到全部）
+  const ownOnly = viewer.role === "therapist";
 
   const [postDocs, commentDocs, taskDocs, summaryDocs, goalDocs, memberDocs] = await Promise.all([
     Post.find({ case: caseId }).sort({ date: -1, createdAt: -1 }).populate("author", "name role").lean(),
     Comment.find({ case: caseId }).sort({ createdAt: 1 }).populate("author", "name role").lean(),
-    Task.find({ case: caseId })
+    Task.find(ownOnly ? { case: caseId, therapist: viewer.id } : { case: caseId })
       .sort({ createdAt: -1 })
       .populate("therapist", "name role")
       .populate("completedBy", "name role")
       .lean(),
     staffView
-      ? AiSummary.find({ case: caseId }).sort({ createdAt: -1 }).limit(20).populate("requestedBy", "name role").lean()
+      ? AiSummary.find(ownOnly ? { case: caseId, requestedBy: viewer.id } : { case: caseId })
+          .sort({ createdAt: -1 })
+          .limit(20)
+          .populate("requestedBy", "name role")
+          .lean()
       : Promise.resolve([]),
     Goal.find({ case: caseId })
       .sort({ createdAt: -1 })
@@ -63,17 +69,20 @@ export async function loadCaseData(viewer: Viewer, caseId: string) {
       .lean(),
   ]);
 
-  const comments: CommentDTO[] = commentDocs.map((c) => {
+  const comments: CommentDTO[] = commentDocs.flatMap((c) => {
     const author = person(c.author as unknown as PopulatedPerson);
-    return {
-      id: String(c._id),
-      postId: c.post ? String(c.post) : null,
-      text: c.text,
-      createdAt: new Date(c.createdAt).toISOString(),
-      author,
-      // 第一類與親友才需要追蹤「治療師回覆是否已讀」
-      unread: !staffView && author.id !== viewer.id && !hasId(c.readBy, viewer.id),
-    };
+    if (ownOnly && author.role === "therapist" && author.id !== viewer.id) return []; // 其他治療師的回覆
+    return [
+      {
+        id: String(c._id),
+        postId: c.post ? String(c.post) : null,
+        text: c.text,
+        createdAt: new Date(c.createdAt).toISOString(),
+        author,
+        // 第一類與親友才需要追蹤「治療師回覆是否已讀」
+        unread: !staffView && author.id !== viewer.id && !hasId(c.readBy, viewer.id),
+      },
+    ];
   });
 
   const commentsByPost = new Map<string, CommentDTO[]>();

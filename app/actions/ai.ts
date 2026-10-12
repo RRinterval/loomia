@@ -44,10 +44,15 @@ export async function generateSummary(input: { caseId: string; days: number; ins
       .lean();
     if (posts.length === 0) throw new UserError(`近 ${days} 天沒有日誌或提問可以摘要`);
 
-    const comments = await Comment.find({ post: { $in: posts.map((p) => p._id) } })
+    const allComments = await Comment.find({ post: { $in: posts.map((p) => p._id) } })
       .sort({ createdAt: 1 })
       .populate("author", "name role")
       .lean();
+    // 治療師只能讓 AI 讀到自己的回覆，不包含其他治療師與個案的互動
+    const comments = allComments.filter((c) => {
+      const a = c.author as unknown as { _id: unknown; role: string } | null;
+      return !(user.role === "therapist" && a?.role === "therapist" && String(a._id) !== user.id);
+    });
 
     const label = (a: Author) => (a ? `${a.name}（${ROLE_LABELS[a.role as Role] ?? a.role}）` : "已刪除的使用者");
 
